@@ -65,6 +65,7 @@ type BuyViaContact = {
   label: string;
   url: string;
 };
+type BuyViaChannel = 'whatsapp' | 'messenger';
 
 type CartLine = { product: AppProduct; quantity: number };
 type NewAppForm = {
@@ -84,6 +85,7 @@ const adminAccessCode = '831615';
 const remigioMessengerUrl = 'https://m.me/gioroames';
 const whatsappContactUrl = 'https://wa.me/qr/PA4EG37IP4TQB1';
 const messengerContactUrl = 'https://m.me/joshua.bartolome.1614460';
+const buyViaWhatsAppMessage = 'Hello, gusto ko sanang bumili. Maaari po ba akong mag-order?';
 const defaultBuyViaContacts: BuyViaContact[] = [
   { id: 'remigio-messenger', label: 'Remigio Somera', url: remigioMessengerUrl },
   { id: 'whatsapp', label: 'WhatsApp', url: whatsappContactUrl },
@@ -302,7 +304,7 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState<AppProduct | null>(null);
   const [buyViaContacts, setBuyViaContacts] = useState<BuyViaContact[]>(readBuyViaContacts);
   const [buyViaFormOpen, setBuyViaFormOpen] = useState(false);
-  const [buyViaForm, setBuyViaForm] = useState({ label: '', url: '' });
+  const [buyViaInputs, setBuyViaInputs] = useState({ whatsapp: '', messenger: '' });
   const [buyViaFormError, setBuyViaFormError] = useState('');
   const [buyViaRemoveTarget, setBuyViaRemoveTarget] = useState<BuyViaContact | null>(null);
   const [buyViaRemovePin, setBuyViaRemovePin] = useState('');
@@ -551,7 +553,7 @@ function App() {
     if (adminAction === 'add') setAddAppOpen(true);
     if (adminAction === 'manage') setManageAppsOpen(true);
     if (adminAction === 'add-buy-via') {
-      setBuyViaForm({ label: '', url: '' });
+      setBuyViaInputs({ whatsapp: '', messenger: '' });
       setBuyViaFormError('');
       setGeneratedBuyViaCommand('');
       setBuyViaFormOpen(true);
@@ -802,7 +804,7 @@ function App() {
       setAdminLockOpen(true);
       return;
     }
-    setBuyViaForm({ label: '', url: '' });
+    setBuyViaInputs({ whatsapp: '', messenger: '' });
     setBuyViaFormError('');
     setGeneratedBuyViaCommand('');
     setBuyViaFormOpen(true);
@@ -812,29 +814,50 @@ function App() {
     setBuyViaFormOpen(false);
     setBuyViaFormError('');
     setGeneratedBuyViaCommand('');
+    setBuyViaInputs({ whatsapp: '', messenger: '' });
   }
 
-  function addBuyViaContact(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const url = buyViaForm.url.trim();
-    const label = buyViaForm.label.trim() || inferBuyViaLabel(url) || 'Custom contact';
-    if (!url) {
-      setBuyViaFormError('Add a contact link.');
+  function addBuyViaContact(channel: BuyViaChannel) {
+    const rawValue = buyViaInputs[channel].trim();
+    if (!rawValue) {
+      setBuyViaFormError(channel === 'whatsapp' ? 'Ilagay muna ang WhatsApp number.' : 'Ilagay muna ang Messenger username o profile link.');
       return;
     }
+
+    let label = channel === 'whatsapp' ? 'WhatsApp' : 'Messenger';
+    let url = rawValue;
+    if (channel === 'whatsapp') {
+      let digits = rawValue.replace(/\D/g, '');
+      if (digits.startsWith('0')) digits = `63${digits.slice(1)}`;
+      if (digits.length === 10 && digits.startsWith('9')) digits = `63${digits}`;
+      if (digits.length < 11 || !digits.startsWith('63')) {
+        setBuyViaFormError('Use a valid WhatsApp number, for example 639XXXXXXXXX.');
+        return;
+      }
+      url = `https://wa.me/${digits}?text=${encodeURIComponent(buyViaWhatsAppMessage)}`;
+    } else {
+      const usernameOrLink = rawValue.replace(/^@/, '');
+      url = /^https?:\/\//i.test(usernameOrLink) ? usernameOrLink : `https://m.me/${usernameOrLink}`;
+    }
+
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(url);
       if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('Unsupported link');
     } catch {
-      setBuyViaFormError('Use a valid http or https contact link.');
+      setBuyViaFormError('Use a valid Messenger username or profile link.');
       return;
     }
-    const idBase = makeSlug(label);
+    const idBase = `${channel}-${makeSlug(parsedUrl.pathname || parsedUrl.hostname)}`;
     const id = buyViaContacts.some((contact) => contact.id === idBase) ? `${idBase}-${buyViaContacts.length + 1}` : idBase;
     const contact = { id, label, url: parsedUrl.toString() };
     setBuyViaContacts((current) => [...current, contact]);
-    setGeneratedBuyViaCommand(`pnpm buy-via:add --label ${shellQuote(label)} --url ${shellQuote(parsedUrl.toString())}`);
+    setBuyViaInputs((current) => ({ ...current, [channel]: '' }));
+    setGeneratedBuyViaCommand(
+      channel === 'whatsapp'
+        ? `pnpm buy-via:add --whatsapp ${shellQuote(rawValue)}`
+        : `pnpm buy-via:add --messenger ${shellQuote(rawValue)}`,
+    );
     setCopyLabel('Copy command');
     createBuyViaMutation.mutate({ data: contact }, {
       onSuccess: (savedContact) => {
@@ -994,7 +1017,7 @@ function App() {
 
       {manageAppsOpen && <div className="modal-scrim" role="presentation" onClick={closeAdminSurface}><div className="detail-modal manage-apps-modal" role="dialog" aria-modal="true" aria-labelledby="manage-apps-title" onClick={(event) => event.stopPropagation()} data-testid="dialog-manage-apps"><button className="panel-close detail-close" onClick={closeAdminSurface} aria-label="Close manage apps" data-testid="button-close-manage-apps"><X /></button><div className="manage-apps-heading"><div className="admin-lock-icon"><Settings2 /></div><div><p className="detail-category">Seller tools / Posted apps</p><h2 className="detail-name" id="manage-apps-title">Manage your shelf</h2><p className="detail-publisher">Owner-only controls for apps posted from your seller tools.</p></div></div><div className="manage-apps-body">{editingProduct && <form className="edit-app-form" onSubmit={updatePostedApp}><div className="edit-app-form-head"><div><p className="detail-category">Edit listing</p><strong>{editingProduct.name}</strong></div><button type="button" className="panel-close" onClick={closeEditApp} aria-label="Cancel editing"><X /></button></div><div className="form-grid"><label className="form-field"><span>App name</span><input value={editApp.name} onChange={(event) => setEditApp((current) => ({ ...current, name: event.target.value }))} required data-testid={`input-edit-app-name-${editingProduct.id}`} /></label><label className="form-field"><span>Publisher</span><input value={editApp.publisher} onChange={(event) => setEditApp((current) => ({ ...current, publisher: event.target.value }))} data-testid={`input-edit-app-publisher-${editingProduct.id}`} /></label></div><div className="form-grid"><label className="form-field"><span>Category</span><select value={editApp.category} onChange={(event) => setEditApp((current) => ({ ...current, category: event.target.value as AppCategory }))} data-testid={`select-edit-app-category-${editingProduct.id}`}>{appCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label><label className="form-field"><span>Version</span><input value={editApp.version} onChange={(event) => setEditApp((current) => ({ ...current, version: event.target.value }))} data-testid={`input-edit-app-version-${editingProduct.id}`} /></label></div><div className="form-grid"><label className="form-field"><span>File size</span><input value={editApp.size} onChange={(event) => setEditApp((current) => ({ ...current, size: event.target.value }))} data-testid={`input-edit-app-size-${editingProduct.id}`} /></label><label className="form-field"><span>App image</span><input type="file" accept="image/*" onChange={handleEditAppImageChange} data-testid={`input-edit-app-image-${editingProduct.id}`} /></label></div><label className="form-field form-field-wide"><span>Description</span><textarea value={editApp.description} onChange={(event) => setEditApp((current) => ({ ...current, description: event.target.value }))} rows={3} data-testid={`input-edit-app-description-${editingProduct.id}`} /></label>{imageError && <p className="image-upload-error" role="alert">{imageError}</p>}<div className="add-app-actions"><button type="button" className="secondary-action" onClick={closeEditApp} data-testid="button-cancel-edit-app">Cancel</button><button type="submit" className="detail-add" disabled={updateAppMutation.isPending} data-testid="button-save-edit-app">{updateAppMutation.isPending ? 'Saving…' : 'Save changes'} <Check /></button></div></form>}{postedProducts.length ? <div className="posted-app-list" data-testid="list-posted-apps">{postedProducts.map((product) => <div className="posted-app-row" key={product.id} data-testid={`row-posted-app-${product.id}`}><AppIcon product={product} /><div className="posted-app-info"><strong>{product.name}</strong><span>{product.category} / {product.publisher}</span></div><div className="posted-app-actions"><button type="button" className="admin-image-upload" onClick={() => openEditApp(product)} data-testid={`button-edit-app-${product.id}`}><Pencil /><span>Edit</span></button><label className="admin-image-upload"><input key={product.imageDataUrl || product.id} type="file" accept="image/*" onChange={(event) => handlePostedAppImageChange(product, event)} aria-label={`Change image for ${product.name}`} data-testid={`input-change-image-${product.id}`} /><ImagePlus /><span>{product.imageDataUrl ? 'Change image' : 'Add image'}</span></label>{product.imageDataUrl && <button type="button" className="admin-image-reset" onClick={() => resetPostedAppImage(product)} data-testid={`button-reset-image-${product.id}`}><X /><span>Use initials</span></button>}<button className="admin-delete-card" onClick={() => deleteAdminApp(product)} aria-label={`Remove ${product.name}`} data-testid={`button-manage-delete-${product.id}`}><Trash2 /><span>Remove</span></button></div></div>)}</div> : <div className="manage-empty"><div className="empty-symbol"><Terminal /></div><h3>No posted apps yet.</h3><p>Add an app first, then come back here when you need to remove it.</p><button className="detail-add" onClick={() => { setManageAppsOpen(false); setAddAppOpen(true); }} data-testid="button-manage-add-app"><FilePlus2 /> Add new app</button></div>}{imageError && !editingProduct && <p className="image-upload-error manage-image-error" role="alert">{imageError}</p>}{generatedRemoveCommand && <div className="command-card remove-command-card" data-testid="card-generated-remove-command"><div className="command-card-head"><div><p className="detail-category">GitHub / Terminal</p><strong>Removal command</strong></div><button type="button" className="copy-command" onClick={() => copyCommand(generatedRemoveCommand)} data-testid="button-copy-remove-app-command"><Copy /> {copyLabel}</button></div><code>{generatedRemoveCommand}</code><p>Keep this command if you also want to remove the listing from the source catalog, not just this browser preview.</p></div>}</div></div></div>}
 
-      {selectedProduct && <div className="modal-scrim" role="presentation" onClick={() => setSelectedProduct(null)}><div className="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-name" onClick={(event) => event.stopPropagation()} data-testid={`dialog-product-${selectedProduct.id}`}><button className="panel-close detail-close" onClick={() => setSelectedProduct(null)} aria-label="Close app details" data-testid="button-close-product"><X /></button><div className="detail-top"><AppIcon product={selectedProduct} large /><div><p className="detail-category">{selectedProduct.category} / Authorized app</p><h2 className="detail-name" id="detail-name">{selectedProduct.name}</h2><p className="detail-publisher">Published by {selectedProduct.publisher}</p></div></div><div className="detail-body"><p className="detail-description">{selectedProduct.detail}</p><div className="detail-facts"><div className="detail-fact"><span>Version</span><strong>{selectedProduct.version}</strong></div><div className="detail-fact"><span>Download</span><strong>{selectedProduct.size}</strong></div><div className="detail-fact"><span>License</span><strong>Authorized</strong></div></div><div className="detail-bottom"><span className="detail-price">{formatPrice(selectedProduct.price)}</span><div className="detail-actions"><a className="detail-messenger" href={whatsappContactUrl} target="_blank" rel="noreferrer" data-testid={`link-buy-via-whatsapp-fee-${selectedProduct.id}`}>Buy via contact · ₱50 <MessageCircle /></a>{buyViaContacts.map((contact) => <div className="buy-via-contact-row" key={contact.id}><a className="detail-messenger" href={contact.url} target="_blank" rel="noreferrer" data-testid={`link-buy-via-${contact.id}-${selectedProduct.id}`}>Buy via {contact.label} <MessageCircle /></a><button className="buy-via-remove" type="button" onClick={() => openBuyViaRemoveGate(contact)} aria-label={`Remove Buy via ${contact.label}`} title="Owner code required to remove"><span className="locked-trash-icon"><Trash2 /><Lock /></span></button></div>)}<button className="buy-via-add-box" type="button" onClick={openBuyViaForm} data-testid={`button-add-buy-via-${selectedProduct.id}`}><span className="buy-via-add-copy"><Plus /><span><strong>Add Buy via contact</strong><small>Owner only · locked</small></span></span><Lock className="buy-via-add-lock" aria-label="Owner code required" /> </button>{buyViaFormOpen && <form className="buy-via-form" onSubmit={addBuyViaContact}><div className="buy-via-form-heading"><div><p className="detail-category">Additional contact</p><strong>Add a Buy via option</strong></div><span>₱50</span></div><label>Contact name <span className="buy-via-auto-label">(auto for Messenger / WhatsApp)</span><input value={buyViaForm.label} onChange={(event) => setBuyViaForm((current) => ({ ...current, label: event.target.value }))} placeholder="Auto: Messenger, WhatsApp, or custom" autoFocus /></label><label>Contact link<input type="url" value={buyViaForm.url} onChange={(event) => setBuyViaForm((current) => { const url = event.target.value; const previousAutoLabel = inferBuyViaLabel(current.url); const shouldAutoLabel = !current.label.trim() || current.label === previousAutoLabel; return { ...current, url, label: shouldAutoLabel ? inferBuyViaLabel(url) : current.label }; })} placeholder="https://..." /></label>{buyViaFormError && <p className="buy-via-form-error" role="alert">{buyViaFormError}</p>}<div className="buy-via-form-actions"><button className="buy-via-cancel" type="button" onClick={closeBuyViaForm}>Cancel</button><button className="detail-add" type="submit">Add for ₱50 <Plus /></button></div>{generatedBuyViaCommand && <div className="command-card buy-via-command-card" data-testid="card-generated-buy-via-command"><div className="command-card-head"><div><p className="detail-category">GitHub / Terminal</p><strong>Keep this command</strong></div><button type="button" className="copy-command" onClick={() => copyCommand(generatedBuyViaCommand)} data-testid="button-copy-buy-via-command"><Copy /> {copyLabel}</button></div><code>{generatedBuyViaCommand}</code><p>Run this from your GitHub repository root to add the contact to the shared Buy via directory.</p></div>}</form>}</div></div></div></div></div>}
+      {selectedProduct && <div className="modal-scrim" role="presentation" onClick={() => setSelectedProduct(null)}><div className="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-name" onClick={(event) => event.stopPropagation()} data-testid={`dialog-product-${selectedProduct.id}`}><button className="panel-close detail-close" onClick={() => setSelectedProduct(null)} aria-label="Close app details" data-testid="button-close-product"><X /></button><div className="detail-top"><AppIcon product={selectedProduct} large /><div><p className="detail-category">{selectedProduct.category} / Authorized app</p><h2 className="detail-name" id="detail-name">{selectedProduct.name}</h2><p className="detail-publisher">Published by {selectedProduct.publisher}</p></div></div><div className="detail-body"><p className="detail-description">{selectedProduct.detail}</p><div className="detail-facts"><div className="detail-fact"><span>Version</span><strong>{selectedProduct.version}</strong></div><div className="detail-fact"><span>Download</span><strong>{selectedProduct.size}</strong></div><div className="detail-fact"><span>License</span><strong>Authorized</strong></div></div><div className="detail-bottom"><span className="detail-price">{formatPrice(selectedProduct.price)}</span><div className="detail-actions"><a className="detail-messenger" href={whatsappContactUrl} target="_blank" rel="noreferrer" data-testid={`link-buy-via-whatsapp-fee-${selectedProduct.id}`}>Buy via contact · ₱50 <MessageCircle /></a>{buyViaContacts.map((contact) => <div className="buy-via-contact-row" key={contact.id}><a className="detail-messenger" href={contact.url} target="_blank" rel="noreferrer" data-testid={`link-buy-via-${contact.id}-${selectedProduct.id}`}>Buy via {contact.label} <MessageCircle /></a><button className="buy-via-remove" type="button" onClick={() => openBuyViaRemoveGate(contact)} aria-label={`Remove Buy via ${contact.label}`} title="Owner code required to remove"><span className="locked-trash-icon"><Trash2 /><Lock /></span></button></div>)}<button className="buy-via-add-box" type="button" onClick={openBuyViaForm} data-testid={`button-add-buy-via-${selectedProduct.id}`}><span className="buy-via-add-copy"><Plus /><span><strong>Add Buy via contact</strong><small>Owner only · locked</small></span></span><Lock className="buy-via-add-lock" aria-label="Owner code required" /> </button>{buyViaFormOpen && <div className="buy-via-form"><div className="buy-via-form-heading"><div><p className="detail-category">Additional contact</p><strong>Add a Buy via option</strong></div><span>₱50</span></div><div className="buy-via-quick-field"><label>WhatsApp number<input type="text" inputMode="tel" value={buyViaInputs.whatsapp} onChange={(event) => { setBuyViaInputs((current) => ({ ...current, whatsapp: event.target.value })); setBuyViaFormError(''); }} placeholder="639XXXXXXXXX" autoFocus /></label><button className="detail-add" type="button" onClick={() => addBuyViaContact('whatsapp')}>Buy via WhatsApp <MessageCircle /></button></div><div className="buy-via-quick-field"><label>Messenger username or link<input type="text" value={buyViaInputs.messenger} onChange={(event) => { setBuyViaInputs((current) => ({ ...current, messenger: event.target.value })); setBuyViaFormError(''); }} placeholder="username or https://m.me/..." /></label><button className="detail-add" type="button" onClick={() => addBuyViaContact('messenger')}>Buy via Messenger <MessageCircle /></button></div>{buyViaFormError && <p className="buy-via-form-error" role="alert">{buyViaFormError}</p>}<div className="buy-via-form-actions"><button className="buy-via-cancel" type="button" onClick={closeBuyViaForm}>Cancel</button></div>{generatedBuyViaCommand && <div className="command-card buy-via-command-card" data-testid="card-generated-buy-via-command"><div className="command-card-head"><div><p className="detail-category">GitHub / Terminal</p><strong>Keep this command</strong></div><button type="button" className="copy-command" onClick={() => copyCommand(generatedBuyViaCommand)} data-testid="button-copy-buy-via-command"><Copy /> {copyLabel}</button></div><code>{generatedBuyViaCommand}</code><p>Run this from your GitHub repository root to add the contact to the shared Buy via directory.</p></div>}</div>}</div></div></div></div></div>}
 
       {buyViaRemoveTarget && <div className="modal-scrim" role="presentation" onClick={closeBuyViaRemoveGate}><form className="detail-modal buy-via-owner-modal" role="dialog" aria-modal="true" aria-labelledby="buy-via-owner-title" onClick={(event) => event.stopPropagation()} onSubmit={removeBuyViaContact}><button className="panel-close detail-close" type="button" onClick={closeBuyViaRemoveGate} aria-label="Close owner code prompt"><X /></button><div className="buy-via-lock-mark"><Trash2 /><Lock /></div><p className="detail-category">Owner only / Locked removal</p><h2 id="buy-via-owner-title">Remove Buy via {buyViaRemoveTarget.label}?</h2><p className="buy-via-owner-copy">Enter the 6-digit owner code to remove this contact option.</p><label className="buy-via-code-label">Owner code<input type="password" inputMode="numeric" autoComplete="off" maxLength={6} pattern="[0-9]{6}" value={buyViaRemovePin} onChange={(event) => setBuyViaRemovePin(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="••••••" autoFocus /></label>{buyViaRemoveError && <p className="buy-via-form-error" role="alert">{buyViaRemoveError}</p>}<button className="detail-add owner-remove-button" type="submit"><Trash2 /> Remove Buy via</button></form></div>}
 
