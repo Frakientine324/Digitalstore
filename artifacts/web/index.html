@@ -16,9 +16,52 @@
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <style>
+      /* Auto-added Buy via Contact Button */
+      .buy-via-contact-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 15px 25px;
+        border: none;
+        border-radius: 50px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 9999;
+        transition: transform 0.2s, background 0.2s;
+      }
+      
+      .buy-via-contact-btn:hover {
+        background: #45a049;
+        transform: scale(1.05);
+      }
+      
+      .buy-via-contact-btn:active {
+        transform: scale(0.95);
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    
+    <!-- Auto-added Buy via Contact Button -->
+    <button class="buy-via-contact-btn" onclick="handleBuyViaContact()">
+      🛒 Buy via Contact
+    </button>
+    
+    <script>
+      function handleBuyViaContact() {
+        // Replace with your actual contact logic
+        alert('Contact feature - add your contact method here!');
+        // Example: window.location.href = 'https://wa.me/YOUR_NUMBER';
+        // Example: window.open('mailto:your@email.com');
+      }
+    </script>
+    
     <script type="module" src="%BASE_URL%src/main.tsx"></script>
   </body>
 </html>
