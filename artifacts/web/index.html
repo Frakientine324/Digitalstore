@@ -1,162 +1,362 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1"
+  />
 
-    <title>Contact Buy Manager — authorized app shelf</title>
+  <title>Contact Buy Manager — authorized app shelf</title>
 
-    <meta
-      name="description"
-      content="Contact Buy Manager helps people browse authorized app listings, manage a basket, and reach the owner through direct Buy via links."
-    />
+  <meta
+    name="description"
+    content="Contact Buy Manager helps people browse authorized app listings, manage a basket, and reach the owner through direct Buy via links."
+  />
 
-    <meta name="robots" content="index, follow" />
+  <meta name="robots" content="index, follow" />
 
-    <meta property="og:title" content="Contact Buy Manager" />
-    <meta
-      property="og:description"
-      content="Browse authorized apps, manage your basket, and contact the owner through direct Buy via links."
-    />
-    <meta property="og:type" content="website" />
+  <meta property="og:title" content="Contact Buy Manager" />
+  <meta
+    property="og:description"
+    content="Browse authorized apps, manage your basket, and contact the owner through direct Buy via links."
+  />
+  <meta property="og:type" content="website" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Contact Buy Manager" />
-    <meta
-      name="twitter:description"
-      content="Browse authorized apps, manage your basket, and contact the owner through direct Buy via links."
-    />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Contact Buy Manager" />
+  <meta
+    name="twitter:description"
+    content="Browse authorized apps, manage your basket, and contact the owner through direct Buy via links."
+  />
 
-    <meta name="theme-color" content="#27233f" />
+  <meta name="theme-color" content="#27233f" />
 
-    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <style>
-      .buy-via-contact-btn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #4caf50;
-        color: white;
-        padding: 15px 25px;
-        border: none;
-        border-radius: 50px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        z-index: 9999;
-        transition: transform 0.2s, background 0.2s;
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #27233f;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    /* ADD BUY VIA CONTACT UI */
+
+    .buy-contact-modal {
+      width: min(690px, calc(100vw - 32px));
+      margin: 40px auto;
+      padding: 34px 28px 40px;
+      background: #fbfaf7;
+      border: 2px solid #dedbd2;
+      border-radius: 42px;
+      box-shadow: 0 20px 60px rgba(30, 25, 60, 0.25);
+    }
+
+    .buy-contact-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 82px;
+      margin-bottom: 18px;
+      padding: 0 28px;
+      background: #f7f5f7;
+      border: 2px solid #cbc8e3;
+      border-radius: 22px;
+      color: #40329d;
+      font-size: 21px;
+      font-weight: 700;
+    }
+
+    .buy-contact-option .chat {
+      font-size: 29px;
+      font-weight: 400;
+    }
+
+    .add-buy-contact {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      min-height: 126px;
+      margin-top: 10px;
+      padding: 22px 28px;
+      background: #fff0e5;
+      border: 2px dashed #df7945;
+      border-radius: 25px;
+      cursor: pointer;
+    }
+
+    .add-buy-contact .plus {
+      color: #df7945;
+      font-size: 42px;
+      font-weight: 300;
+    }
+
+    .add-buy-contact .text {
+      flex: 1;
+    }
+
+    .add-buy-contact strong {
+      display: block;
+      color: #28243e;
+      font-size: 21px;
+      margin-bottom: 7px;
+    }
+
+    .add-buy-contact span {
+      color: #777084;
+      font-size: 17px;
+    }
+
+    .add-buy-contact .lock {
+      color: #df7945;
+      font-size: 29px;
+    }
+
+    /* ADDITIONAL CONTACT */
+
+    .additional-contact {
+      margin-top: 20px;
+      padding: 30px;
+      background: #fbfaf7;
+      border: 2px solid #dedbd2;
+      border-radius: 26px;
+    }
+
+    .contact-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 26px;
+    }
+
+    .contact-header span {
+      color: #51438e;
+      font-size: 16px;
+      letter-spacing: 3px;
+      font-family: monospace;
+    }
+
+    .contact-header strong {
+      color: #df7945;
+      font-size: 23px;
+    }
+
+    .additional-contact h2 {
+      margin: 0 0 34px;
+      color: #29263f;
+      font-size: 27px;
+    }
+
+    .additional-contact label {
+      display: block;
+      margin-top: 22px;
+      margin-bottom: 7px;
+      color: #686476;
+      font-size: 16px;
+      letter-spacing: 1px;
+    }
+
+    .additional-contact small {
+      display: block;
+      margin-bottom: 10px;
+      color: #686476;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    .additional-contact input {
+      width: 100%;
+      height: 70px;
+      padding: 0 25px;
+      background: #fff;
+      border: 2px solid #dedbd2;
+      border-radius: 18px;
+      outline: none;
+      color: #302c46;
+      font-size: 17px;
+    }
+
+    .additional-contact input:focus {
+      border-color: #5541b8;
+      box-shadow: 0 0 0 5px rgba(85, 65, 184, 0.10);
+    }
+
+    .additional-contact input::placeholder {
+      color: #a29da9;
+    }
+
+    .contact-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 18px;
+      margin-top: 28px;
+    }
+
+    .contact-actions button {
+      min-height: 66px;
+      padding: 0 30px;
+      border-radius: 18px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .cancel-btn {
+      background: #fbfaf7;
+      border: 2px solid #dedbd2;
+      color: #696477;
+    }
+
+    .add-btn {
+      background: #4932b8;
+      border: 2px solid #4932b8;
+      color: white;
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 600px) {
+      .buy-contact-modal {
+        width: calc(100vw - 28px);
+        margin: 22px auto;
+        padding: 24px 18px 30px;
+        border-radius: 32px;
       }
 
-      .buy-via-contact-btn:hover {
-        background: #45a049;
-        transform: scale(1.05);
+      .buy-contact-option {
+        min-height: 76px;
+        padding: 0 20px;
+        font-size: 18px;
+        border-radius: 18px;
       }
 
-      .buy-via-contact-btn:active {
-        transform: scale(0.95);
+      .add-buy-contact {
+        min-height: 115px;
+        padding: 20px;
+        gap: 15px;
+        border-radius: 21px;
       }
 
-      .buyer-name-display {
-        position: fixed;
-        bottom: 85px;
-        right: 20px;
-        background: #27233f;
-        color: white;
-        padding: 10px 16px;
-        border-radius: 12px;
-        font-size: 14px;
-        display: none;
-        z-index: 9998;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      .add-buy-contact strong {
+        font-size: 18px;
       }
-    </style>
-  </head>
 
-  <body>
-    <div id="root"></div>
-
-    <!-- Lalagyan ng pangalan ng buyer -->
-    <div id="buyerNameDisplay" class="buyer-name-display"></div>
-
-    <!-- Buy via Contact Button -->
-    <button
-      id="buyContactBtn"
-      class="buy-via-contact-btn"
-      type="button"
-      onclick="handleBuyViaContact()"
-    >
-      🛒 Buy via Contact
-    </button>
-
-    <script>
-      function handleBuyViaContact() {
-        const buyerName = prompt(
-          "Ilagay ang pangalan ng buyer:"
-        );
-
-        // Kapag pinindot ang Cancel
-        if (buyerName === null) {
-          return;
-        }
-
-        // Kapag walang pangalan
-        if (buyerName.trim() === "") {
-          alert("Pakilagay ang pangalan ng buyer.");
-          return;
-        }
-
-        const cleanName = buyerName.trim();
-
-        // Ipakita ang pangalan sa button
-        const buyButton = document.getElementById("buyContactBtn");
-        buyButton.textContent = "🛒 " + cleanName + " — Buy via Contact";
-
-        // Ipakita rin ang pangalan sa maliit na label
-        const nameDisplay = document.getElementById("buyerNameDisplay");
-        nameDisplay.textContent = "Buyer: " + cleanName;
-        nameDisplay.style.display = "block";
-
-        // Mensaheng ipapadala sa owner
-        const message =
-          "Hello, ako si " +
-          cleanName +
-          ". Gusto kong bumili sa Contact Buy Manager.";
-
-        alert(
-          "Salamat, " +
-            cleanName +
-            "!
-
-Makikipag-ugnayan sa iyo ang owner."
-        );
-
-        /*
-          PALITAN ANG NUMBER SA IBABA.
-
-          Format:
-          Philippines: 639XXXXXXXXX
-          Halimbawa:
-          const ownerNumber = "639171234567";
-        */
-
-        const ownerNumber = "639XXXXXXXXX";
-
-        // Buksan ang WhatsApp
-        window.open(
-          "https://wa.me/" +
-            ownerNumber +
-            "?text=" +
-            encodeURIComponent(message),
-          "_blank"
-        );
+      .add-buy-contact span {
+        font-size: 15px;
       }
-    </script>
 
-    <script type="module" src="%BASE_URL%src/main.tsx"></script>
-  </body>
+      .additional-contact {
+        padding: 22px 18px;
+        border-radius: 22px;
+      }
+
+      .additional-contact h2 {
+        font-size: 23px;
+      }
+
+      .contact-actions {
+        flex-direction: column;
+      }
+
+      .contact-actions button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="root">
+
+    <!-- ADD BUY VIA CONTACT -->
+    <section class="buy-contact-modal">
+
+      <div class="buy-contact-option">
+        <span>Buy via contact · ₱50</span>
+        <span class="chat">◯</span>
+      </div>
+
+      <div class="buy-contact-option">
+        <span>Buy via Remigio Somera</span>
+        <span class="chat">◯</span>
+      </div>
+
+      <div class="buy-contact-option">
+        <span>Buy via WhatsApp</span>
+        <span class="chat">◯</span>
+      </div>
+
+      <!-- AUTOMATIC ADD BUY VIA CONTACT -->
+      <div class="add-buy-contact">
+        <span class="plus">＋</span>
+
+        <div class="text">
+          <strong>Add Buy via contact</strong>
+          <span>Owner only · locked</span>
+        </div>
+
+        <span class="lock">🔒</span>
+      </div>
+
+      <!-- ADDITIONAL CONTACT -->
+      <div class="additional-contact">
+
+        <div class="contact-header">
+          <span>ADDITIONAL CONTACT</span>
+          <strong>₱50</strong>
+        </div>
+
+        <h2>Add a Buy via option</h2>
+
+        <label>CONTACT NAME</label>
+        <small>(AUTO FOR MESSENGER / WHATSAPP)</small>
+
+        <input
+          type="text"
+          placeholder="Auto: Messenger, WhatsApp, or custom"
+        />
+
+        <label>CONTACT LINK</label>
+
+        <input
+          type="url"
+          placeholder="https://..."
+        />
+
+        <div class="contact-actions">
+          <button class="cancel-btn" type="button">
+            Cancel
+          </button>
+
+          <button class="add-btn" type="button">
+            Add for ₱50 ＋
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+
+  <script type="module" src="%BASE_URL%src/main.tsx"></script>
+
+</body>
 </html>
