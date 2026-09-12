@@ -3,26 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+
     <title>Contact Buy Manager — authorized app shelf</title>
-    <meta name="description" content="Contact Buy Manager helps people browse authorized app listings, manage a basket, and reach the owner through direct Buy via links." />
+
+    <meta
+      name="description"
+      content="Contact Buy Manager helps people browse authorized app listings, manage a basket, and reach the owner through direct Buy via links."
+    />
+
     <meta name="robots" content="index, follow" />
+
     <meta property="og:title" content="Contact Buy Manager" />
-    <meta property="og:description" content="Browse authorized apps, manage your basket, and contact the owner through direct Buy via links." />
+    <meta
+      property="og:description"
+      content="Browse authorized apps, manage your basket, and contact the owner through direct Buy via links."
+    />
     <meta property="og:type" content="website" />
+
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Contact Buy Manager" />
-    <meta name="twitter:description" content="Browse authorized apps, manage your basket, and contact the owner through direct Buy via links." />
+    <meta
+      name="twitter:description"
+      content="Browse authorized apps, manage your basket, and contact the owner through direct Buy via links."
+    />
+
     <meta name="theme-color" content="#27233f" />
+
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <style>
-      /* Auto-added Buy via Contact Button */
       .buy-via-contact-btn {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        background: #4CAF50;
+        background: #4caf50;
         color: white;
         padding: 15px 25px;
         border: none;
@@ -30,38 +47,116 @@
         font-size: 16px;
         font-weight: bold;
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         z-index: 9999;
         transition: transform 0.2s, background 0.2s;
       }
-      
+
       .buy-via-contact-btn:hover {
         background: #45a049;
         transform: scale(1.05);
       }
-      
+
       .buy-via-contact-btn:active {
         transform: scale(0.95);
       }
+
+      .buyer-name-display {
+        position: fixed;
+        bottom: 85px;
+        right: 20px;
+        background: #27233f;
+        color: white;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        display: none;
+        z-index: 9998;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      }
     </style>
   </head>
+
   <body>
     <div id="root"></div>
-    
-    <!-- Auto-added Buy via Contact Button -->
-    <button class="buy-via-contact-btn" onclick="handleBuyViaContact()">
+
+    <!-- Lalagyan ng pangalan ng buyer -->
+    <div id="buyerNameDisplay" class="buyer-name-display"></div>
+
+    <!-- Buy via Contact Button -->
+    <button
+      id="buyContactBtn"
+      class="buy-via-contact-btn"
+      type="button"
+      onclick="handleBuyViaContact()"
+    >
       🛒 Buy via Contact
     </button>
-    
+
     <script>
       function handleBuyViaContact() {
-        // Replace with your actual contact logic
-        alert('Contact feature - add your contact method here!');
-        // Example: window.location.href = 'https://wa.me/YOUR_NUMBER';
-        // Example: window.open('mailto:your@email.com');
+        const buyerName = prompt(
+          "Ilagay ang pangalan ng buyer:"
+        );
+
+        // Kapag pinindot ang Cancel
+        if (buyerName === null) {
+          return;
+        }
+
+        // Kapag walang pangalan
+        if (buyerName.trim() === "") {
+          alert("Pakilagay ang pangalan ng buyer.");
+          return;
+        }
+
+        const cleanName = buyerName.trim();
+
+        // Ipakita ang pangalan sa button
+        const buyButton = document.getElementById("buyContactBtn");
+        buyButton.textContent = "🛒 " + cleanName + " — Buy via Contact";
+
+        // Ipakita rin ang pangalan sa maliit na label
+        const nameDisplay = document.getElementById("buyerNameDisplay");
+        nameDisplay.textContent = "Buyer: " + cleanName;
+        nameDisplay.style.display = "block";
+
+        // Mensaheng ipapadala sa owner
+        const message =
+          "Hello, ako si " +
+          cleanName +
+          ". Gusto kong bumili sa Contact Buy Manager.";
+
+        alert(
+          "Salamat, " +
+            cleanName +
+            "!
+
+Makikipag-ugnayan sa iyo ang owner."
+        );
+
+        /*
+          PALITAN ANG NUMBER SA IBABA.
+
+          Format:
+          Philippines: 639XXXXXXXXX
+          Halimbawa:
+          const ownerNumber = "639171234567";
+        */
+
+        const ownerNumber = "639XXXXXXXXX";
+
+        // Buksan ang WhatsApp
+        window.open(
+          "https://wa.me/" +
+            ownerNumber +
+            "?text=" +
+            encodeURIComponent(message),
+          "_blank"
+        );
       }
     </script>
-    
+
     <script type="module" src="%BASE_URL%src/main.tsx"></script>
   </body>
 </html>
